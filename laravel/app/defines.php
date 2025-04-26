@@ -1,4 +1,4 @@
 <?php
 
-define('TABLE_USERS', 'users');
+define('TABLE_USER_ACCOUNTS', 'user_accounts');
 define('TABLE_TRANSACTIONS', 'transactions');
