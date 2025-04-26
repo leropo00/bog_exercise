@@ -14,8 +14,8 @@ class BetTransactionsController extends Controller
     public function createAccount(Request $request)
     {
         $validated = $request->validate([
-            'username' => ['required'],
-            'email' => ['required', 'email'],
+            'username' => ['required', 'unique:' . TABLE_USER_ACCOUNTS . ',username', 'max:255'],
+            'email' => ['required', 'email', 'unique:' . TABLE_USER_ACCOUNTS .',email', 'max:255'],
             // initial_balance is optional, since table definition has default value, it has to be at least smallest bet
             'initial_balance' => ['nullable', 'numeric', 'min:10.0'],
         ]);
@@ -33,12 +33,18 @@ class BetTransactionsController extends Controller
             'username' =>  $user->username,
             'email' =>  $user->email,
             'balance' =>  $user->balance,
-
         ], ResponseCode::HTTP_CREATED);
     }
 
     public function processTransaction(Request $request)
     {
+        $validated = $request->validate([
+            'username' => ['required', 'unique:' . TABLE_USER_ACCOUNTS . ',username'],
+            'email' => ['required', 'email', 'unique:' . TABLE_USER_ACCOUNTS .',email'],
+            // initial_balance is optional, since table definition has default value, it has to be at least smallest bet
+            'initial_balance' => ['nullable', 'numeric', 'min:10.0'],
+        ]);
+
         return response(['implement' =>'todo'], ResponseCode::HTTP_OK);
     }
 }
