@@ -1,0 +1,51 @@
+#version: '3.8' ccc
+
+services:
+  app:
+    build: ./laravel
+    image: bog-exercise-laravel
+    container_name: bog-exercise-laravel
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./laravel:/var/www
+    networks:
+      - bog-exercise-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: bog-exercise-nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./laravel:/var/www
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - bog-exercise-network        
+
+  db:
+    platform: ${DOCKER_MYSQL_PLATFORM} #this line is optional if you are using Mac Silicon chip (M1/M2/M3)
+    image: mysql:8.0
+    container_name: bog-exercise-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    volumes:
+      - bog-dbdata:/var/lib/mysql
+    networks:
+      - bog-exercise-network
+    ports:
+      - "3306:3306"
+
+networks:
+  bog-exercise-network:
+    driver: bridge
+
+volumes:
+  bog-dbdata:
+    driver: local
