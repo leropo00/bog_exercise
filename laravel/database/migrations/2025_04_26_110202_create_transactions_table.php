@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('transaction_id')->unique();
             $table->foreignId('user_id')->constrained(
-                table: TABLE_USERS, indexName: 'transactions_user_id'
+                table: TABLE_USER_ACCOUNTS, indexName: 'transactions_user_id'
             );
             $table->decimal('bet_amount', total: 10, places: 2)->default(100);
             $table->string('game_type');
