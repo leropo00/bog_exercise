@@ -20,7 +20,7 @@ return new class extends Migration
             );
             $table->decimal('bet_amount', total: 10, places: 2)->default(100);
             $table->string('game_type');
-            $table->enum('status',array_column(TransactionStatus::cases(), 'value'))->default(TransactionStatus::NOT_PROCESSED->value);
+            $table->enum('status',array_column(TransactionStatus::cases(), 'value'))->default(TransactionStatus::PROCESSED->value);
             $table->timestamps();
         });
     }

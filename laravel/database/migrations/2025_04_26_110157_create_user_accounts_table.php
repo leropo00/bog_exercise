@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('username')->unique();
             $table->string('email')->unique();
             $table->decimal('balance', total: 10, places: 2)->default(100);
+            $table->decimal('betted_amount', total: 10, places: 2)->default(0);
             $table->timestamps();
         });
     }

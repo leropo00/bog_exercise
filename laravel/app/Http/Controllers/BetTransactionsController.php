@@ -73,7 +73,13 @@ class BetTransactionsController extends Controller
 
         try {
 
-            UserAccount::where("id", $transactionData['user_id'])->decrement('balance', $transactionData['bet_amount']);
+            /*
+                temporary field is used for extra safety
+                for additional protection against corrupted data there should be a cron job
+                that would set this fields to 0, if user account wasn't active for a while, 
+                with current implementation updated_at could be used
+            */
+            UserAccount::where("id", $transactionData['user_id'])->increment('betted_amount', $transactionData['bet_amount']);
             $betMoneyDeducted = true;
 
             $betWinnings = $this->gamesService->calculateBetWinnings($transactionData['bet_amount'],  $transactionData['game_type']);
@@ -81,13 +87,13 @@ class BetTransactionsController extends Controller
             $balanceAmountChange = $betWinnings - $transactionData['bet_amount'];
 
             DB::transaction(function () use ($transactionData, $balanceAmountChange)  {
-                /*
+
+                UserAccount::where("id", $transactionData['user_id'])->decrement('betted_amount', $transactionData['bet_amount']);
+
                 if ($balanceAmountChange < 0) {
                     UserAccount::where("id", $transactionData['user_id'])->decrement('balance', -$balanceAmountChange);
                 } 
-                else
-                */
-                if ($balanceAmountChange > 0) {
+                else if ($balanceAmountChange > 0) {
                     UserAccount::where("id", $transactionData['user_id'])->increment('balance', $balanceAmountChange);
                 }
 
@@ -99,7 +105,7 @@ class BetTransactionsController extends Controller
         } catch (Exception $e) {
             if ($betMoneyDeducted) {
                 // revert back the bet money deducted
-                UserAccount::where("id", $transactionData['user_id'])->increment('balance', $transactionData['bet_amount']);           
+                UserAccount::where("id", $transactionData['user_id'])->decrement('betted_amount', $transactionData['bet_amount']);
             }
 
             $transactionData['status'] = TransactionStatus::ERROR_PROCESSING->value;

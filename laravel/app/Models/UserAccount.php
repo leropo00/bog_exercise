@@ -21,12 +21,9 @@ class UserAccount extends Model
      */
     protected $fillable = ['username', 'email', 'balance'];
 
-    // add attribute
-    // available_balance
     public function getAvailableBalanceAttribute()
     {
-        // TODO include money_in_bets here        
-        return $this->balance;
+        return $this->balance - $this->betted_amount;
     }
     
     public function scopeBetAmountPossible(Builder $query, float|int $value): void

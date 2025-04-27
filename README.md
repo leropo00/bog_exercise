@@ -84,9 +84,9 @@ http://localhost:8000/api/process-transaction
 
 {
     "user_id": 1,
-    "bet_ammount": "15",
-    "transaction_id": "ccccc"
-    "game_type": "blackjack"
+    "bet_amount": "15",
+    "transaction_id": "tnx-999111",
+    "game_type": "slots"
 }
 
 
