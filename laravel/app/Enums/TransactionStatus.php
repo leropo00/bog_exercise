@@ -3,6 +3,6 @@
 namespace App\Enums;
 
 enum TransactionStatus: string {
-    case NOT_PROCESSED = 'not_processed';
+    case ERROR_PROCESSING = 'error';
     case PROCESSED = 'processed")';
 }
