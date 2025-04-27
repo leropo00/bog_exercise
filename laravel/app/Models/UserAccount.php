@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class UserAccount extends Model
 {
@@ -28,7 +29,6 @@ class UserAccount extends Model
     
     public function scopeBetAmountPossible(Builder $query, float|int $value): void
     {
-        // TODO include money_in_bets here
-        $query->where('balance', '>=', floatval($value));
+        $query->where(DB::raw('balance - betted_amount'), '>=', floatval($value));
     }
 }

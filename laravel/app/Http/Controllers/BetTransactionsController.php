@@ -15,7 +15,6 @@ use App\Services\GamesService;
 
 class BetTransactionsController extends Controller
 {
-
     // Constructor property promotion is used
     public function __construct(protected GamesService $gamesService){}
 
@@ -72,9 +71,9 @@ class BetTransactionsController extends Controller
         $betMoneyDeducted = false;
 
         try {
-
             /*
-                temporary field is used for extra safety
+                Money is already deducted here, by increment temporary field, until bet finishes.
+                Temporary field is used for extra safety
                 for additional protection against corrupted data there should be a cron job
                 that would set this fields to 0, if user account wasn't active for a while, 
                 with current implementation updated_at could be used
