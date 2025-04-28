@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 use App\Enums\TransactionStatus;
+use App\Http\Resources\UserResource;
 use App\Models\Transaction;
 use App\Models\UserAccount;
 use App\Services\GamesService;
@@ -33,14 +34,10 @@ class BetTransactionsController extends Controller
         if (Arr::has($transactionData, 'initial_balance')) {         
             $data['balance'] = $transactionData['initial_balance'];
         }
-
         $user = UserAccount::create($data);
-        return response()->json([
-            'user_id' => $user->id,
-            'username' =>  $user->username,
-            'email' =>  $user->email,
-            'balance' =>  $user->available_balance,
-        ], ResponseCode::HTTP_CREATED);
+        return (new UserResource($user))
+            ->response()
+            ->setStatusCode(ResponseCode::HTTP_CREATED);
     }
 
     public function processTransaction(Request $request)
@@ -60,7 +57,8 @@ class BetTransactionsController extends Controller
             return response()->json(['message' => 'bet no longer possible'], ResponseCode::HTTP_BAD_REQUEST);
         }        
 
-        $lock = Cache::lock("bet_transaction_lock_" . $transactionData['transaction_id'], 10); // Lock for 10 seconds
+        $lock = Cache::lock("bet_transaction_lock_" . $transactionData['transaction_id'], 180); 
+        // Lock for 180 seconds
 
         if (!$lock->get()) {
             // transaction is in progress return conflict status
