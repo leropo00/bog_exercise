@@ -13,9 +13,12 @@ use App\Http\Resources\UserResource;
 use App\Models\Transaction;
 use App\Models\UserAccount;
 use App\Services\GamesService;
+use App\Traits\ApiStatusResponses;
 
 class BetTransactionsController extends Controller
 {
+    use ApiStatusResponses;
+
     // Constructor property promotion is used
     public function __construct(protected GamesService $gamesService){}
 
@@ -50,43 +53,51 @@ class BetTransactionsController extends Controller
         ]);
 
         if (Transaction::where("transaction_id", $transactionData['transaction_id'])->processed()->first()) {
-            return response()->json(['message' => 'transaction already processed'], ResponseCode::HTTP_BAD_REQUEST);
+            return $this->badRequestResponse(
+                ['transaction_id' => $transactionData['transaction_id']], 
+                PROCESS_TRANSACTION_MSG_ALREADY_PROCCESED,
+            );
         }
 
         if (!UserAccount::where("id", $transactionData['user_id'])->betAmountPossible($transactionData['bet_amount'])->first()) {
-            return response()->json(['message' => 'bet no longer possible'], ResponseCode::HTTP_BAD_REQUEST);
+            return $this->badRequestResponse(
+                ['transaction_id' => $transactionData['transaction_id']], 
+                PROCESS_TRANSACTION_MSG_BET_TOO_LARGE,
+            );
         }        
 
-        $lock = Cache::lock("bet_transaction_lock_" . $transactionData['transaction_id'], 180); 
-        // Lock for 180 seconds
-
+        // Lock for 30 seconds same as  max_execution_time 
+        $lock = Cache::lock("bet_transaction_lock_" . $transactionData['transaction_id'], 30); 
         if (!$lock->get()) {
-            // transaction is in progress return conflict status
-            return response()->json(['message' => 'Too many requests, please try again.'], ResponseCode::HTTP_TOO_MANY_REQUESTS);
+            return $this->conflictResponse(
+                ['transaction_id' => $transactionData['transaction_id']], 
+                PROCESS_TRANSACTION_MSG_ALREADY_IN_PROGRESS,
+            );
         }
 		
-
-        $betMoneyDeducted = false;
-
+        $bettedAmountUpdated = false;
         try {
             /*
-                Money is already deducted here, by increment temporary field, until bet finishes.
-                Temporary field is used for extra safety
-                for additional protection against corrupted data there should be a cron job
+                Money is already deducted here, by incrementing betted_amount field, until the bet finishes.
+                Temporary field is used for extra safety,
+                for additional protection against corrupted data, there should be a cron job
                 that would set this fields to 0, if user account wasn't active for a while, 
-                with current implementation updated_at could be used
+                with current implementation updated_at timestamp could be used.
             */
             UserAccount::where("id", $transactionData['user_id'])->increment('betted_amount', $transactionData['bet_amount']);
-            $betMoneyDeducted = true;
+            $bettedAmountUpdated = true;
 
             $betWinnings = $this->gamesService->calculateBetWinnings($transactionData['bet_amount'],  $transactionData['game_type']);
-            // winnings return 0, when bet was lost, balanceAmountChange amount will be negative then 
+            /*
+                Bet Winnings return 0, when bet was lost, balanceAmountChange amount will be negative then.
+                By doing things this way, you could implement a game, where betted money would only be partialy lost.
+                so for example you would bet 10.0, but have only 5.0 deducted when losing in certain conditions
+            */
             $balanceAmountChange = $betWinnings - $transactionData['bet_amount'];
 
             DB::transaction(function () use ($transactionData, $balanceAmountChange)  {
 
                 UserAccount::where("id", $transactionData['user_id'])->decrement('betted_amount', $transactionData['bet_amount']);
-
                 if ($balanceAmountChange < 0) {
                     UserAccount::where("id", $transactionData['user_id'])->decrement('balance', -$balanceAmountChange);
                 } 
@@ -100,14 +111,19 @@ class BetTransactionsController extends Controller
                 
 
         } catch (Exception $e) {
-            if ($betMoneyDeducted) {
-                // revert back the bet money deducted
+            // revert back the bet money deducted
+            if ($bettedAmountUpdated) {
                 UserAccount::where("id", $transactionData['user_id'])->decrement('betted_amount', $transactionData['bet_amount']);
             }
 
             $transactionData['status'] = TransactionStatus::ERROR_PROCESSING->value;
             Transaction::create($transactionData);
             // TODO add error fields inside the table maybe
+
+            return $this->errorResponse(
+                ['transaction_id' => $transactionData['transaction_id']], 
+                PROCESS_TRANSACTION_MSG_ALREADY_IN_PROGRESS,
+            );
 
             return response([
                 "status" =>  "error",
@@ -119,11 +135,9 @@ class BetTransactionsController extends Controller
             $lock->release();
         }
 
-        return response([
-                "status" =>  "success",
-                "message" =>  "Transaction processed successfully",
-                "transaction_id" =>  $transactionData['transaction_id'],
-                "user_balance" => UserAccount::where("id", $transactionData['user_id'])->first()->available_balance,
-            ], ResponseCode::HTTP_CREATED);
+        return $this->createdResponse([
+            "transaction_id" =>  $transactionData['transaction_id'],
+            "user_balance" => UserAccount::where("id", $transactionData['user_id'])->first()->available_balance,
+        ], PROCESS_TRANSACTION_MSG_TRANSACTION_SUCCESS);
     }
 }
