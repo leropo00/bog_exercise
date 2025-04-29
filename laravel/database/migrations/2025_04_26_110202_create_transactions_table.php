@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained(
                 table: TABLE_USER_ACCOUNTS, indexName: 'transactions_user_id'
             );
-            $table->decimal('bet_amount', total: 10, places: 2)->default(100);
+            $table->decimal('bet_amount', total: 10, places: 2);
             $table->string('game_type');
             $table->enum('status',array_column(TransactionStatus::cases(), 'value'))->default(TransactionStatus::PROCESSED->value);
             $table->timestamps();
