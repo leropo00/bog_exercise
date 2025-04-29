@@ -17,23 +17,25 @@ class GamesService
      * Returns bet winnings
      * Value returned as 0 here means no winnings
      *
-     * @param  float   $betAmount
+     * @param  int|float   $betAmount
      * @param  string  $gamePlayed
      * @return float
      */
-    public function calculateBetWinnings($betAmount, $gamePlayed): float 
+    public function calculateBetWinnings(int|float $betAmount, string $gamePlayed): float 
     {
         // simulation of long running background task
         sleep(1); 
+        $amount = floatval($betAmount);
         if ($gamePlayed == GAME_ROULETTE) {
-            return $this->playRoulette($betAmount);
+            return $this->playRoulette($amount);
         }
         else if ($gamePlayed == GAME_CRAPS) {
-            return $this->playCraps($betAmount);
+            return $this->playCraps($amount);
         }
         else if ($gamePlayed == GAME_SLOTS) {
-            return $this->playSlots($betAmount);
+            return $this->playSlots($amount);
         }
+        throw new \Exception('Unsupported game: ' . $gamePlayed);
     }
 
     /**
@@ -46,7 +48,7 @@ class GamesService
      * @param  float   $betAmount
      * @return float
      */
-    private function playRoulette($betAmount): float 
+    private function playRoulette(float $betAmount): float 
     {
         return rand(1, 38) <= 18 ? $betAmount * 2 : 0.0;
     }
@@ -69,7 +71,7 @@ class GamesService
      * @param  float   $betAmount
      * @return float
      */
-    private function playCraps($betAmount): float 
+    private function playCraps(float $betAmount): float 
     {
         $initialValue = $this->simulateTwoDicesRoll();
         if (in_array($initialValue, GAME_CRAPS_IMMEDIATE_WINS)) {
@@ -104,7 +106,7 @@ class GamesService
      * @param  float   $betAmount
      * @return float
      */
-    private function playSlots($betAmount): float 
+    private function playSlots(float $betAmount): float 
     {
         $slotSpin = $this->simulateSlotSpin();
         $counts = [
