@@ -22,12 +22,24 @@ class UserAccount extends Model
      */
     protected $fillable = ['username', 'email', 'balance'];
 
-    public function getAvailableBalanceAttribute()
+   /**
+     * Return available balance that user can bet, by substracting from total user balance, ammount from bets in progress.
+     *
+     * @param  float
+     */
+    public function getAvailableBalanceAttribute(): float
     {
         return $this->balance - $this->betted_amount;
     }
     
-    public function scopeBetAmountPossible(Builder $query, float|int $value): void
+    /**
+     * Apply scope, that user can bet certain ammount.
+     *
+     * @param  Builder   $query
+     * @param  float|int   $betAmount
+     * 
+     */
+    public function scopeBetAmountPossible(Builder $query, float|int $betAmount): void
     {
         $query->where(DB::raw('balance - betted_amount'), '>=', floatval($value));
     }

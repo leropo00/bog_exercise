@@ -24,7 +24,10 @@ class Transaction extends Model
     protected $fillable = ['transaction_id', 'user_id', 'bet_amount', 'game_type', 'status'];
 
     /**
-     * Scope a query to only proccesed transactions.
+     * Scope a query to only return proccesed transactions.
+     *     
+     * @param  Builder   $query
+     *
      */
     public function scopeProcessed(Builder $query): void
     {

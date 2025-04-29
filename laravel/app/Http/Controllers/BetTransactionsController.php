@@ -22,6 +22,12 @@ class BetTransactionsController extends Controller
     // Constructor property promotion is used
     public function __construct(protected GamesService $gamesService){}
 
+    /**
+     * Creates a user new account.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function createAccount(Request $request)
     {
         $transactionData = $request->validate([
@@ -43,6 +49,12 @@ class BetTransactionsController extends Controller
             ->setStatusCode(ResponseCode::HTTP_CREATED);
     }
 
+    /**
+     * Process bet transaction and change user account balance according to bet outcome.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function processTransaction(Request $request)
     {
         $transactionData = $request->validate([
@@ -66,7 +78,6 @@ class BetTransactionsController extends Controller
             );
         }        
 
-        // Lock for 30 seconds same as  max_execution_time 
         $lock = Cache::lock("bet_transaction_lock_" . $transactionData['transaction_id'], 30); 
         if (!$lock->get()) {
             return $this->conflictResponse(
@@ -89,7 +100,7 @@ class BetTransactionsController extends Controller
 
             $betWinnings = $this->gamesService->calculateBetWinnings($transactionData['bet_amount'],  $transactionData['game_type']);
             /*
-                Bet Winnings return 0, when bet was lost, balanceAmountChange amount will be negative then.
+                Since bet Winnings return 0, when bet is lost, balanceAmountChange amount will be negative then.
                 By doing things this way, you could implement a game, where betted money would only be partialy lost.
                 so for example you would bet 10.0, but have only 5.0 deducted when losing in certain conditions
             */
@@ -108,7 +119,8 @@ class BetTransactionsController extends Controller
                 $transactionData['status'] = TransactionStatus::PROCESSED->value;
                 Transaction::create($transactionData);
             });
-                
+            
+            $bettedAmountUpdated = false;
 
         } catch (Exception $e) {
             // revert back the bet money deducted
@@ -120,16 +132,19 @@ class BetTransactionsController extends Controller
             Transaction::create($transactionData);
             // TODO add error fields inside the table maybe
 
+            /*  Important from php language documentaion
+                https://www.php.net/manual/en/language.exceptions.php
+
+                A return statement is encountered inside either the try or the catch blocks, 
+                the finally block will still be executed.
+                Moreover, the return statement is evaluated when encountered, 
+                but the result will be returned after the finally block is executed
+            */
+
             return $this->errorResponse(
                 ['transaction_id' => $transactionData['transaction_id']], 
-                PROCESS_TRANSACTION_MSG_ALREADY_IN_PROGRESS,
+                PROCESS_TRANSACTION_MSG_SYSTEM_ERROR,
             );
-
-            return response([
-                "status" =>  "error",
-                "message" =>  "System error occured while processing transaction",
-                "transaction_id" =>  $transactionData['transaction_id'],
-            ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
 
         } finally {
             $lock->release();

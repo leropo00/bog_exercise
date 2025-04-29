@@ -16,6 +16,10 @@ class GamesService
     /**
      * Returns bet winnings
      * Value returned as 0 here means no winnings
+     *
+     * @param  float   $betAmount
+     * @param  string  $gamePlayed
+     * @return float
      */
     public function calculateBetWinnings($betAmount, $gamePlayed): float 
     {
@@ -38,15 +42,17 @@ class GamesService
      *   Roulette wheel has 38 slots: numbers 1–36, 0, and 00,
      *   18 slots are red, 18 slots are black, and 2 slots are green.
      *   In this simulation, first 18 numbers, mean color match
+     *
+     * @param  float   $betAmount
+     * @return float
      */
-
     private function playRoulette($betAmount): float 
     {
         return rand(1, 38) <= 18 ? $betAmount * 2 : 0.0;
     }
     /** 
-     *   This simulates Pass Line Bet in a game of craps,
-     *    payout is 1:1 in relation to bet placed. 
+     *  This simulates Pass Line Bet in a game of craps,
+     *  payout is 1:1 in relation to bet placed. 
      *    
      *   rules are the following, two dices, with numbers 1 - 6 are rolled, 
      *   based on the first role, one of the following scenarios occurs:
@@ -59,6 +65,9 @@ class GamesService
      *   3.) Point Phase: If the first roll is 4, 5, 6, 8, 9, or 10, this number becomes the point. 
      *       The shooter continues rolling until either the point number 
      *       is rolled again (you win) or a 7 is rolled (you lose).
+     *
+     * @param  float   $betAmount
+     * @return float
      */
     private function playCraps($betAmount): float 
     {
@@ -87,12 +96,14 @@ class GamesService
     }
 
     /** 
-     *   This simulates game of slots, here slots have 3 reels and 4 unique symbols.
-     *   Each reel has 10 symbols, and count of each symbol is the same in each reel
-     *    Each reel has one  7, two bars, three cherries and four watermelons.
-     *   If 3 symbols match   
+     *  This simulates game of slots, here slots have 3 reels and 4 unique symbols.
+     *  Each reel has 10 symbols, and count of each symbol is the same in each reel
+     *  Each reel has one  7, two bars, three cherries and four watermelons.
+     *  If 3 symbols match   
+     *
+     * @param  float   $betAmount
+     * @return float
      */
-
     private function playSlots($betAmount): float 
     {
         $slotSpin = $this->simulateSlotSpin();
@@ -132,15 +143,24 @@ class GamesService
         return 0.0;
     }
 
+    /** 
+     *  This simulates rolling od two dices.
+     *  Two separate randoms are used since in actual dice rolls,
+     *  certain outcomes like 7, are more likely, than others like 2 or 12.
+     *
+     * @return int
+     */
     private function simulateTwoDicesRoll(): int 
     {
-        // two separate randoms are used
-        // since in actual dice rolls,
-        // certain outcomes like 7, are more likely
-        // than others like 2 or 12.
         return rand(1, 6) + rand(1, 6);
     }
 
+    /** 
+     *  This simulates slot wheel spinning results.
+     *  Each number represents different symbol.
+     *
+     * @return array<int|int>
+     */
     private function simulateSlotSpin(): array 
     {
         $results = [];

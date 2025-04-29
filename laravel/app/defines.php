@@ -3,6 +3,12 @@
 define('TABLE_USER_ACCOUNTS', 'user_accounts');
 define('TABLE_TRANSACTIONS', 'transactions');
 
+/* Cache lock */
+// lock is defined based on max possible duration of script
+// currenlty this is set to 30 seconds
+define('BET_TRANSACTION_LOCK', ini_get('max_execution_time'));
+
+
 /* API response fields */
 define('API_RESPONSE_STATUS_FIELD',     'status');
 define('API_RESPONSE_MESSAGE_FIELD',    'message');
