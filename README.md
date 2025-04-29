@@ -54,7 +54,7 @@ CREATE TABLE `transactions` (
   `user_id` bigint unsigned NOT NULL,
   `bet_amount` decimal(10,2) NOT NULL DEFAULT '100.00',
   `game_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('error','processed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'processed',
+  `status` enum('processed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'processed',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -104,7 +104,8 @@ If bet is lost, 0 is returned for winning, else winnings is returned as factor m
 From this betted amount is substraced and according to winnigs users balance is changed.
 All the following operation happen inside a transaction, so either they all succed or fail.
 
-If exception occurs at any point, inside catch, first operation is to revert (decrement) 'betted_amount', in case this was performed. Transaction is still stored on exceptions, but with status 'error'.
+If exception occurs at any point, inside catch, first operation is to revert (decrement) 'betted_amount',
+in case 'betted_amount' was sucessfuly changed before. 
 
 
 ## How to setup 

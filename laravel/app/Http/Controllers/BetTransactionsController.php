@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 use App\Enums\TransactionStatus;
 use App\Http\Resources\UserResource;
@@ -88,13 +89,6 @@ class BetTransactionsController extends Controller
 		
         $bettedAmountUpdated = false;
         try {
-            /*
-                Money is already deducted here, by incrementing betted_amount field, until the bet finishes.
-                Temporary field is used for extra safety,
-                for additional protection against corrupted data, there should be a cron job
-                that would set this fields to 0, if user account wasn't active for a while, 
-                with current implementation updated_at timestamp could be used.
-            */
             UserAccount::where("id", $transactionData['user_id'])->increment('betted_amount', $transactionData['bet_amount']);
             $bettedAmountUpdated = true;
 
@@ -107,7 +101,6 @@ class BetTransactionsController extends Controller
             $balanceAmountChange = $betWinnings - $transactionData['bet_amount'];
 
             DB::transaction(function () use ($transactionData, $balanceAmountChange)  {
-
                 UserAccount::where("id", $transactionData['user_id'])->decrement('betted_amount', $transactionData['bet_amount']);
                 if ($balanceAmountChange < 0) {
                     UserAccount::where("id", $transactionData['user_id'])->decrement('balance', -$balanceAmountChange);
@@ -115,22 +108,18 @@ class BetTransactionsController extends Controller
                 else if ($balanceAmountChange > 0) {
                     UserAccount::where("id", $transactionData['user_id'])->increment('balance', $balanceAmountChange);
                 }
-
                 $transactionData['status'] = TransactionStatus::PROCESSED->value;
                 Transaction::create($transactionData);
             });
             
             $bettedAmountUpdated = false;
 
-        } catch (Exception $e) {
-            // revert back the bet money deducted
+        } catch (\Throwable  $e) {
             if ($bettedAmountUpdated) {
                 UserAccount::where("id", $transactionData['user_id'])->decrement('betted_amount', $transactionData['bet_amount']);
             }
-
-            $transactionData['status'] = TransactionStatus::ERROR_PROCESSING->value;
-            Transaction::create($transactionData);
-            // TODO add error fields inside the table maybe
+            Log::error("Exception processing transaction: " . $transactionData['transaction_id'] . ", " . $e->getMessage());
+            Log::error($e->getTraceAsString());
 
             /*  Important from php language documentaion
                 https://www.php.net/manual/en/language.exceptions.php

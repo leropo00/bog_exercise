@@ -41,6 +41,6 @@ class UserAccount extends Model
      */
     public function scopeBetAmountPossible(Builder $query, float|int $betAmount): void
     {
-        $query->where(DB::raw('balance - betted_amount'), '>=', floatval($value));
+        $query->where(DB::raw('balance - betted_amount'), '>=', floatval($betAmount));
     }
 }
