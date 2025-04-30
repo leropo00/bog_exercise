@@ -42,7 +42,7 @@ trait ApiStatusResponses
      * @param  array  $data
      * @return JsonResponse
      */
-    public function okResponse(array $data = []): JsonResponse
+    public function okResponse(array $data = [], string $message = ''): JsonResponse
     {
         return $this->successResponse($data);
     }
@@ -53,9 +53,9 @@ trait ApiStatusResponses
      * @param  array  $data
      * @return JsonResponse
      */
-    public function createdResponse(array $data = []): JsonResponse
+    public function createdResponse(array $data = [], string $message = ''): JsonResponse
     {
-        return $this->successResponse($data, Response::HTTP_CREATED);
+        return $this->successResponse($data, $message, Response::HTTP_CREATED);
     }
 
     /**
@@ -65,7 +65,7 @@ trait ApiStatusResponses
      */
     public function noContentResponse(): JsonResponse
     {
-        return $this->successResponse([], Response::HTTP_NO_CONTENT);
+        return new JsonResponse([], $Response::HTTP_NO_CONTENT);
     }
 
     /**
