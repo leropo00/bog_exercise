@@ -41,9 +41,7 @@ class BetTransactionsController extends Controller
             'username' => $transactionData['username'],
             'email' => $transactionData['email'],
         ];
-        if (Arr::has($transactionData, 'initial_balance')) {         
-            $data['balance'] = $transactionData['initial_balance'];
-        }
+        $data['balance'] = $transactionData['initial_balance'] ?? 100.0;
         $user = UserAccount::create($data);
         return (new UserResource($user))
             ->response()
